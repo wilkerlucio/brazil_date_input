@@ -8,20 +8,40 @@ module BrazilDateInput
   module ClassMethods
     def brazil_date_field *args
       args.each do |field|
-        field_name = "#{field}_bd"
+        field_name = "#{field}_br"
         
         define_method field_name do
           if send(field).blank?
             nil
           else
-            send(field).to_s.split('-').reverse.join('/')
+            send(field).strftime("%d/%m/%Y")
           end
         end
         
         define_method "#{field_name}=" do |date|
           return unless date =~ /\d{2}\/\d{2}\/\d{4}/
           
-          send("#{field}=", date.split('/').reverse.join('-'))
+          send("#{field}=", Date.strptime(date, "%d/%m/%Y"))
+        end
+      end
+    end
+    
+    def brazil_datetime_field *args
+      args.each do |field|
+        field_name = "#{field}_br"
+
+        define_method field_name do
+          if send(field).blank?
+            nil
+          else
+            send(field).strftime("%d/%m/%Y %H:%M")
+          end
+        end
+
+        define_method "#{field_name}=" do |date|
+          return unless date =~ /^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/
+
+          send("#{field}=", DateTime.strptime(date + "-0300", "%d/%m/%Y %H:%M%Z"))
         end
       end
     end
@@ -41,4 +61,5 @@ module BrazilDateInput
   end
 end
 
-ActiveRecord::Base.send :include, BrazilDateInput
+ActiveRecord::Base.send :include, BrazilDateInput if defined? ActiveRecord
+Mongoid::Document::ClassMethods.send :include, BrazilDateInput::ClassMethods
